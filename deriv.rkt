@@ -182,9 +182,8 @@ Implemented rules:
          (new-pow (if (number? pow)
                       (- pow 1)
                       (make-subtraction pow 1))))
-    (foldr make-product 1 (list (make-power base new-pow)
-                                pow
-                                (deriv base var)))))
+    (make-product (make-product pow (deriv base var))
+                  (make-power base new-pow))))
 
 (define (product-rule exp var)
   "Definition of the product rule: f(x)g(x) => f'(x)g(x) + f(x)g'(x)"

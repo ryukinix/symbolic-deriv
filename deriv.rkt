@@ -4,12 +4,11 @@
 ;; Based on lectures of Structure and Interpretation of Computer Programs.
 ;;
 
+(provide deriv arg1 arg2 atom?)
 
-(define op car)
-(define a1 cadr)
-(define a2 caddr)
-(define m1 cadr)
-(define m2 caddr)
+
+(define arg1 cadr)
+(define arg2 caddr)
 (define ^ expt) ;; power symbol function
 
 
@@ -27,6 +26,18 @@
   (and (atom? exp)
        (eq? exp var)))
 
+(define (contains-var? exp var)
+  (cond ((null? exp) #f)
+        ((number? exp) #f)
+        ((same-var? exp var) #t)
+        ((atom? exp) #f)
+        ((same-var? (arg1 exp) var) #t)
+        ((< (length exp) 3) #f)
+        ((same-var? (arg2 exp) var) #t)
+        ((or (contains-var? (arg1 exp) var)
+             (contains-var? (arg2 exp) var)) #t)
+        (else #f)))
+
 (define (operation? exp op)
   "Check if a given EXP is a operation of symbol OP.
    Ex.: (operation? '(* x x) '*) => #t"
@@ -37,24 +48,34 @@
   "Check if EXP it's a sum, like (+ x 2)"
   (operation? exp '+))
 
-(define (power? exp)
-  "Check if EXP it's operator is a power ^."
-  (operation? exp '^))
+(define (binary-subtraction? exp)
+  (and (= (length exp) 3)
+       (operation? exp '-)))
+
+(define (unary-subtraction? exp)
+  (and (= (length exp) 2)
+       (operation? exp '-)))
 
 (define (product? exp)
   "Check if is a product expression."
   (operation? exp '*))
 
-;; First definitions of make-sum and make-product without simplifications
+(define (power? exp var)
+  "Check if EXP it's operator is a power ^ and not a exponential."
+  (and (operation? exp '^)
+       (contains-var? (arg1 exp) var)
+       (constant? (arg2 exp) var)))
 
-;; (define make-sum (a1 a2)
-;;   (list '+ a1 a2))
+(define (exponential? exp var)
+  "Check if EXP is a exponential expression of VAR."
+  (and (operation? exp '^)
+       (eq? (arg1 exp) 'e)
+       (contains-var? (arg2 exp) var)))
 
-;; (define make-product (m1 m2)
-;;   (list '* m1 m2))
+(define (logarithm? exp var)
+  "Check if EXP is a logarithm expression of VAR"
+  #f)
 
-;; second version of representation
-;; simplifying algebraic expressions
 
 (define (make-sum a1 a2)
   "Make a sum expression based in a1 and a2 already simplified."
@@ -68,11 +89,23 @@
         ((same-var? a1 a2) (list '* 2 a1))
         (else (list '+ a1 a2))))
 
+(define (make-subtraction a1 a2)
+  "Make a subtraction expression simplified"
+  (cond ((and (number? a1)
+              (number? a2))
+         (- a1 a2))
+        ((and (number? a1) (= a1 0))
+         (if (number? a2) (- a2) (list '- a2)))
+        ((and number? a2) (= a2 0)
+         a1)
+        ((same-var? a1 a2) 0)
+        (else (list '- a1 a2))))
+
 (define (make-product m1 m2)
-  "Make a product expression simplified based in a1 and a2."
+  "Make a product expression simplified based in m1 and m2."
   (cond ((and (number? m1)
               (number? m2))
-         (+ m1 m2))
+         (* m1 m2))
         ((or (and (number? m1) (= m1 0))
              (and (number? m2) (= m2 0)))
          0)
@@ -83,25 +116,55 @@
          m1)
         (else (list '* m1 m2))))
 
-;; FIXME: chain rule need be used
-(define (power-rule exp)
+(define (make-power base pow)
+  "Make a product expression simplified of BASE and POW."
+  (cond ((and (number? pow) (= pow 1)) base)
+        ((and (number? base) (= base 1)) 1)
+        (else (list '^ base pow))))
+
+
+(define (make-exponential base var)
+  (list '^ base var))
+
+
+(define (power-rule exp var)
   "Definition of the power-rule: x^n => n*x^(n-1)"
-  (let ((base (cadr exp))
-        (pow (caddr exp)))
-    (list '* pow (list '^ base (- pow 1)))))
+  (let* ((base (arg1 exp))
+         (pow (arg2 exp))
+         (new-pow (if (number? pow)
+                      (- pow 1)
+                      (make-subtraction pow 1))))
+    (foldr make-product 1 (list (make-power base new-pow)
+                                pow
+                                (deriv base var)))))
+
+(define (exponential-rule exp var)
+  (let ((base (arg1 exp))
+        (pow (arg2 exp)))
+    (make-product (deriv pow var) (make-exponential base pow))))
+
+(define (logarithm-rule exp var)
+  (error "Not implemented yet!"))
+
 
 (define (deriv exp var)
   "Main function with calculus rules for derivation."
   (cond ((constant? exp var) 0)
         ((same-var? exp var) 1)
         ((sum? exp)
-         (make-sum (deriv (a1 exp) var)
-                   (deriv (a2 exp) var)))
+         (make-sum (deriv (arg1 exp) var)
+                   (deriv (arg2 exp) var)))
+        ((binary-subtraction? exp)
+         (make-subtraction (deriv (arg1 exp) var)
+                           (deriv (arg2 exp) var)))
+        ((unary-subtraction? exp)
+         (list '- (deriv (arg1 exp) var)))
         ((product? exp)
-         (make-sum
-          (make-product (m1 exp)
-                        (deriv (m2 exp) var))
-          (make-product (m2 exp)
-                        (deriv (m1 exp) var))))
-        ((power? exp) (power-rule exp))
+         (make-sum (make-product (arg1 exp)
+                                 (deriv (arg2 exp) var))
+                   (make-product (arg2 exp)
+                                 (deriv (arg1 exp) var))))
+        ((power? exp var) (power-rule exp var))
+        ((exponential? exp var) (exponential-rule exp var))
+        ((logarithm? exp var) (logarithm-rule exp var))
         (else (error (format "Unknown rule for ~a" exp)))))

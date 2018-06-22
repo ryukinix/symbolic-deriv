@@ -13,23 +13,38 @@
 
 
 (define (atom? exp)
+  "Check if a EXP it's a simple atom: that means is not a pair-cons cell."
   (not (pair? exp)))
 
 (define (constant? exp var)
+  "Check if EXP is a constant based in VAR argument."
   (and (atom? exp)
        (not (eq? exp var))))
 
 (define (same-var? exp var)
+  "Check if EXP and VAR it's the same variable."
   (and (atom? exp)
        (eq? exp var)))
 
-(define (sum? exp)
+(define (operation? exp op)
+  "Check if a given EXP is a operation of symbol OP.
+   Ex.: (operation? '(* x x) '*) => #t"
   (and (not (atom? exp))
        (eq? (car exp) '+)))
 
+(define (sum? exp)
+  "Check if EXP it's a sum, like (+ x 2)"
+  (operation? exp '+))
+
 (define (power? exp)
-  (and (not (atom? exp))
-       (eq? (car exp) '^)))
+  "Check if EXP it's operator is a power ^."
+  (operation? exp '^))
+
+(define (product? exp)
+  "Check if is a product expression."
+  (operation? exp '*))
+
+;; First definitions of make-sum and make-product without simplifications
 
 ;; (define make-sum (a1 a2)
 ;;   (list '+ a1 a2))
@@ -41,6 +56,7 @@
 ;; simplifying algebraic expressions
 
 (define (make-sum a1 a2)
+  "Make a sum expression based in a1 and a2 already simplified."
   (cond ((and (number? a1)
               (number? a2))
          (+ a1 a2))
@@ -52,6 +68,7 @@
         (else (list '+ a1 a2))))
 
 (define (make-product m1 m2)
+  "Make a product expression simplified based in a1 and a2."
   (cond ((and (number? m1)
               (number? m2))
          (+ m1 m2))
@@ -65,15 +82,12 @@
          m1)
         (else (list '* m1 m2))))
 
-
+;; FIXME: chain rule need be used
 (define (power-rule exp)
+  "Definition of the power-rule: x^n => n*x^(n-1)"
   (let ((base (cadr exp))
         (pow (caddr exp)))
     (list '* pow (list '^ base (- pow 1)))))
-
-(define (product? exp)
-  (and (not (atom? exp))
-       (eq? (car exp) '*)))
 
 (define (deriv exp var)
   (cond ((constant? exp var) 0)
@@ -87,6 +101,7 @@
                         (deriv (m2 exp) var))
           (make-product (m2 exp)
                         (deriv (m1 exp) var))))
-        ((power? exp) (power-rule exp))))
+        ((power? exp) (power-rule exp))
+        (else (error "Unknown expression."))))
 
 ;; (deriv (* x x) 'x)

@@ -7,6 +7,19 @@
 (provide deriv arg1 arg2 atom?)
 
 
+#|
+
+Implemented rules:
+
++ Subtraction
++ Product
++ Quotient/Division (not yet)
++ Sum
++ Power
++ Exponential of e
+
+|#
+
 (define arg1 cadr)
 (define arg2 caddr)
 (define ^ expt) ;; power symbol function
@@ -42,22 +55,28 @@
 (define (operation? exp op)
   "Check if a given EXP is a operation of symbol OP.
    Ex.: (operation? '(* x x) '*) => #t"
-  (and (not (atom? exp))
+  (and (pair? exp)
        (eq? (car exp) op)))
+
+(define (binary-op? exp op)
+  (and (operation? exp op)
+       (= (length exp) 3)))
+
+(define (unary-op? exp op)
+  (and (operation? exp op)
+       (= (length exp) 2)))
 
 (define (sum? exp)
   "Check if EXP it's a sum, like (+ x 2)"
-  (operation? exp '+))
+  (binary-op? exp '+))
 
 (define (binary-subtraction? exp)
   "Check if the EXP is a binary exp as (- x y)"
-  (and (= (length exp) 3)
-       (operation? exp '-)))
+  (binary-op? exp '-))
 
 (define (unary-subtraction? exp)
   "Check if the EXP is a unary exp as (- x)"
-  (and (= (length exp) 2)
-       (operation? exp '-)))
+  (unary-op? exp '-))
 
 (define (product? exp)
   "Check if is a product expression."
@@ -67,18 +86,14 @@
   "Check if EXP it's operator is a power ^ and not a exponential."
   (and (operation? exp '^)
        (contains-var? (arg1 exp) var)
-       (constant? (arg2 exp) var)))
+       (or (constant? (arg2 exp) var)
+           (not (contains-var? (arg2 exp) var)))))
 
 (define (exponential? exp var)
   "Check if EXP is a exponential expression of VAR."
   (and (operation? exp '^)
        (eq? (arg1 exp) 'e)
        (contains-var? (arg2 exp) var)))
-
-(define (logarithm? exp var)
-  "Check if EXP is a logarithm expression of VAR"
-  #f)
-
 
 (define (make-sum a1 a2)
   "Make a sum expression based in a1 and a2 already simplified."
@@ -97,9 +112,13 @@
   (cond ((and (number? a1)
               (number? a2))
          (- a1 a2))
-        ((and (number? a1) (= a1 0))
-         (if (number? a2) (- a2) (list '- a2)))
-        ((and number? a2) (= a2 0)
+        ((and (number? a1)
+              (= a1 0))
+         (if (number? a2)
+             (- a2)
+             (list '- a2)))
+        ((and (number? a2)
+              (= a2 0))
          a1)
         ((same-var? a1 a2) 0)
         (else (list '- a1 a2))))
@@ -125,11 +144,6 @@
         ((and (number? base) (= base 1)) 1)
         (else (list '^ base pow))))
 
-
-(define (make-exponential base var)
-  (list '^ base var))
-
-
 (define (power-rule exp var)
   "Definition of the power-rule: x^n => n*x^(n-1)"
   (let* ((base (arg1 exp))
@@ -145,11 +159,7 @@
   "Use of the chain-rule for the exponential: e^p(x) => p'(x)*e^p(x)"
   (let ((base (arg1 exp))
         (pow (arg2 exp)))
-    (make-product (deriv pow var) (make-exponential base pow))))
-
-(define (logarithm-rule exp var)
-  "Logarithm derivation rule for EXP of var: ln(p(x)) => p'(x)/x"
-  (error "Not implemented yet!"))
+    (make-product (deriv pow var) (make-power base pow))))
 
 
 (define (deriv exp var)
@@ -171,5 +181,4 @@
                                  (deriv (arg1 exp) var))))
         ((power? exp var) (power-rule exp var))
         ((exponential? exp var) (exponential-rule exp var))
-        ((logarithm? exp var) (logarithm-rule exp var))
-        (else (error (format "Unknown rule for ~a" exp)))))
+        (else (error (format "Unknown derivation rule for exp: ~a." exp)))))

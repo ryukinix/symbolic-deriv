@@ -154,6 +154,7 @@ Implemented rules:
   "Make a division expression based in a and b."
   (cond ((and (number? a)
               (number? b)) (/ a b))
+        ((and (number? a) (= a 0)) 0)
         ((and (number? b) (= b 1)) a)
         (else (list '/ a b))))
 

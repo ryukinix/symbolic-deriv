@@ -4,6 +4,7 @@
 ;; Based on lectures of Structure and Interpretation of Computer Programs.
 ;;
 
+
 (define op car)
 (define a1 cadr)
 (define a2 caddr)
@@ -90,6 +91,7 @@
     (list '* pow (list '^ base (- pow 1)))))
 
 (define (deriv exp var)
+  "Main function with calculus rules for derivation."
   (cond ((constant? exp var) 0)
         ((same-var? exp var) 1)
         ((sum? exp)
@@ -103,5 +105,3 @@
                         (deriv (m1 exp) var))))
         ((power? exp) (power-rule exp))
         (else (error "Unknown expression."))))
-
-;; (deriv (* x x) 'x)

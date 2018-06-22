@@ -27,6 +27,7 @@
        (eq? exp var)))
 
 (define (contains-var? exp var)
+  "Check if the EXP tree has at least one VAR symbol."
   (cond ((null? exp) #f)
         ((number? exp) #f)
         ((same-var? exp var) #t)
@@ -49,10 +50,12 @@
   (operation? exp '+))
 
 (define (binary-subtraction? exp)
+  "Check if the EXP is a binary exp as (- x y)"
   (and (= (length exp) 3)
        (operation? exp '-)))
 
 (define (unary-subtraction? exp)
+  "Check if the EXP is a unary exp as (- x)"
   (and (= (length exp) 2)
        (operation? exp '-)))
 
@@ -139,11 +142,13 @@
                                 (deriv base var)))))
 
 (define (exponential-rule exp var)
+  "Use of the chain-rule for the exponential: e^p(x) => p'(x)*e^p(x)"
   (let ((base (arg1 exp))
         (pow (arg2 exp)))
     (make-product (deriv pow var) (make-exponential base pow))))
 
 (define (logarithm-rule exp var)
+  "Logarithm derivation rule for EXP of var: ln(p(x)) => p'(x)/x"
   (error "Not implemented yet!"))
 
 

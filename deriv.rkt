@@ -31,7 +31,7 @@
   "Check if a given EXP is a operation of symbol OP.
    Ex.: (operation? '(* x x) '*) => #t"
   (and (not (atom? exp))
-       (eq? (car exp) '+)))
+       (eq? (car exp) op)))
 
 (define (sum? exp)
   "Check if EXP it's a sum, like (+ x 2)"
@@ -104,4 +104,4 @@
           (make-product (m2 exp)
                         (deriv (m1 exp) var))))
         ((power? exp) (power-rule exp))
-        (else (error "Unknown expression."))))
+        (else (error (format "Unknown rule for ~a" exp)))))

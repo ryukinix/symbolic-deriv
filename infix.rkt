@@ -4,8 +4,6 @@
 
 (provide deriv->infix)
 
-(define operators-precedence '(^ * / + -))
-
 ;; Translate prefix notation to infix notation: (* 2 3) => (2 * 3).
 (define (prefix->infix exp)
   (cond ((null? exp) '())
@@ -14,8 +12,8 @@
                     (car exp)
                     (prefix->infix (arg2 exp))))))
 
-;; FIXME: this algorithm is just a Left-to-Right parser without precedence
 ;; Parse infix expression to infix: (3 + (2 ^ 3)) => (+ 3 (^ 2 3)).
+;; This algorithm is just a Left-to-Right parser without precedence
 (define (infix->prefix exp)
   (cond ((atom? exp) exp)
         ((null? (cdr exp)) (infix->prefix (car exp)))

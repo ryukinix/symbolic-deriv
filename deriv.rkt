@@ -91,8 +91,7 @@ Implemented rules:
 (define (power? exp var)
   (and (binary-op? exp '^)
        (contains-var? (arg1 exp) var)
-       (or (constant? (arg2 exp) var)
-           (not (contains-var? (arg2 exp) var)))))
+       (not (contains-var? (arg2 exp) var))))
 
 ;; Check if EXP is a exponential expression of VAR.
 (define (exponential? exp var)

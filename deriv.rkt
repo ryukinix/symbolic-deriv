@@ -26,7 +26,7 @@ Implemented rules:
 
 #|
 
-== CHECKERS ==
+== EXPRESSION ANALYSIS ==
 
 |#
 

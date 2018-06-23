@@ -30,22 +30,22 @@ Implemented rules:
 
 |#
 
+;; Check if a EXP it's a simple atom: that means is not a pair-cons cell.
 (define (atom? exp)
-  "Check if a EXP it's a simple atom: that means is not a pair-cons cell."
   (not (pair? exp)))
 
+;; Check if EXP is a constant based in VAR argument.
 (define (constant? exp var)
-  "Check if EXP is a constant based in VAR argument."
   (and (atom? exp)
        (not (eq? exp var))))
 
+;; Check if EXP and VAR it's the same variable.
 (define (same-var? exp var)
-  "Check if EXP and VAR it's the same variable."
   (and (atom? exp)
        (eq? exp var)))
 
+;; Check if the EXP tree has at least one VAR symbol.
 (define (contains-var? exp var)
-  "Check if the EXP tree has at least one VAR symbol."
   (cond ((null? exp) #f)
         ((number? exp) #f)
         ((same-var? exp var) #t)
@@ -57,50 +57,50 @@ Implemented rules:
              (contains-var? (arg2 exp) var)) #t)
         (else #f)))
 
+;; Check if a given EXP is a operation of symbol OP.
+;; Ex.: (operation? '(* x x) '*) => #t
 (define (operation? exp op)
-  "Check if a given EXP is a operation of symbol OP.
-   Ex.: (operation? '(* x x) '*) => #t"
   (and (pair? exp)
        (eq? (car exp) op)))
 
+;; Use operation? procedure with a constraint of exp being a binary operation
 (define (binary-op? exp op)
-  "Use operation? procedure with a constraint of exp being a binary operation"
   (and (operation? exp op)
        (= (length exp) 3)))
 
+;; Use operation? procedure with a constraint of exp being a unary operation
 (define (unary-op? exp op)
-  "Use operation? procedure with a constraint of exp being a unary operation"
   (and (operation? exp op)
        (= (length exp) 2)))
 
+;; Check if EXP it's a sum, like (+ x 2)
 (define (sum? exp)
-  "Check if EXP it's a sum, like (+ x 2)"
   (binary-op? exp '+))
 
+;; Check if the EXP is a binary exp as (- x y)
 (define (binary-subtraction? exp)
-  "Check if the EXP is a binary exp as (- x y)"
   (binary-op? exp '-))
 
+;; Check if the EXP is a unary exp as (- x)
 (define (unary-subtraction? exp)
-  "Check if the EXP is a unary exp as (- x)"
   (unary-op? exp '-))
 
+;; Check if is a product expression.
 (define (product? exp)
-  "Check if is a product expression."
   (binary-op? exp '*))
 
 (define (division? exp)
   (binary-op? exp '/))
 
+;; Check if EXP it's operator is a power ^ and not a exponential.
 (define (power? exp var)
-  "Check if EXP it's operator is a power ^ and not a exponential."
   (and (binary-op? exp '^)
        (contains-var? (arg1 exp) var)
        (or (constant? (arg2 exp) var)
            (not (contains-var? (arg2 exp) var)))))
 
+;; Check if EXP is a exponential expression of VAR.
 (define (exponential? exp var)
-  "Check if EXP is a exponential expression of VAR."
   (and (binary-op? exp '^)
        (eq? (arg1 exp) 'e)
        (contains-var? (arg2 exp) var)))
@@ -111,8 +111,8 @@ Implemented rules:
 
 |#
 
+;; Make a sum expression based in a1 and a2 already simplified.
 (define (make-sum a1 a2)
-  "Make a sum expression based in a1 and a2 already simplified."
   (cond ((and (number? a1)
               (number? a2))
          (+ a1 a2))
@@ -123,8 +123,8 @@ Implemented rules:
         ((same-var? a1 a2) (list '* 2 a1))
         (else (list '+ a1 a2))))
 
+;; Make a subtraction expression simplified
 (define (make-subtraction a1 a2)
-  "Make a subtraction expression simplified"
   (cond ((and (number? a1)
               (number? a2))
          (- a1 a2))
@@ -139,8 +139,8 @@ Implemented rules:
         ((same-var? a1 a2) 0)
         (else (list '- a1 a2))))
 
+;; Make a product expression simplified based in m1 and m2.
 (define (make-product m1 m2)
-  "Make a product expression simplified based in m1 and m2."
   (cond ((and (number? m1)
               (number? m2)) (* m1 m2))
         ((or (and (number? m1) (= m1 0))
@@ -150,16 +150,16 @@ Implemented rules:
         ((and (number? m2) (= m2 1)) m1)
         (else (list '* m1 m2))))
 
+;; Make a division expression based in a and b.
 (define (make-division a b)
-  "Make a division expression based in a and b."
   (cond ((and (number? a)
               (number? b)) (/ a b))
         ((and (number? a) (= a 0)) 0)
         ((and (number? b) (= b 1)) a)
         (else (list '/ a b))))
 
+;; Make a product expression simplified of BASE and POW.
 (define (make-power base pow)
-  "Make a product expression simplified of BASE and POW."
   (cond ((and (number? pow) (= pow 1)) base)
         ((and (number? base) (= base 1)) 1)
         (else (list '^ base pow))))
@@ -170,13 +170,13 @@ Implemented rules:
 
 |#
 
+;; Definition of the sum rule: f(x) + g(x) => f'(x) + g'(x)
 (define (sum-rule exp var)
-  "Definition of the sum rule: f(x) + g(x) => f'(x) + g'(x)"
   (make-sum (deriv (arg1 exp) var)
             (deriv (arg2 exp) var)))
 
+;; Definition of the power rule: x^n => n*x^(n-1)
 (define (power-rule exp var)
-  "Definition of the power rule: x^n => n*x^(n-1)"
   (let* ((base (arg1 exp))
          (pow (arg2 exp))
          (new-pow (if (number? pow)
@@ -185,31 +185,31 @@ Implemented rules:
     (make-product (make-product pow (deriv base var))
                   (make-power base new-pow))))
 
+;; Definition of the product rule: f(x)g(x) => f'(x)g(x) + f(x)g'(x)
 (define (product-rule exp var)
-  "Definition of the product rule: f(x)g(x) => f'(x)g(x) + f(x)g'(x)"
   (make-sum (make-product (arg1 exp)
                           (deriv (arg2 exp) var))
             (make-product (arg2 exp)
                           (deriv (arg1 exp) var))))
 
+;; Definition of the division rule: f(x)/g(x) => (f'(x)g(x)-f(x)g'(x))/(g(x))²
 (define (division-rule exp var)
-  "Definition of the division rule: f(x)/g(x) => (f'(x)g(x)-f(x)g'(x))/(g(x))²"
   (let ((f (arg1 exp))
         (g (arg2 exp)))
     (make-division (make-subtraction (make-product (deriv f var) g)
                                      (make-product f (deriv g var)))
                    (make-power g 2))))
 
+;; Use of the chain-rule for the exponential: e^p(x) => p'(x)*e^p(x)
 (define (exponential-rule exp var)
-  "Use of the chain-rule for the exponential: e^p(x) => p'(x)*e^p(x)"
   (let ((base (arg1 exp))
         (pow (arg2 exp)))
     (make-product (deriv pow var) (make-power base pow))))
 
 ;; MAIN ALGORITHM
 
+;; Main function with calculus rules for derivation.
 (define (deriv exp var)
-  "Main function with calculus rules for derivation."
   (cond ((constant? exp var) 0)
         ((same-var? exp var) 1)
         ((sum? exp) (sum-rule exp var))

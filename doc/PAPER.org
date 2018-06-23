@@ -1,7 +1,7 @@
 #+STARTUP: showall align
 #+OPTIONS: todo:nil tasks:("IN-PROGRESS" "DONE") tags:nil
-#+AUTHOR: Manoel Vilela
-#+TITLE: Primeiro titutlo @@latex:\\@@ Segundo titutlo
+#+AUTHOR: Manoel Vilela, Kevin Markx, Rayon Lindraz, Ruann Campos
+#+TITLE: Paradigmas de Linguagem de Programação @@latex:\\@@ Diferenciador Simbólico em Racket
 #+EXCLUDE_TAGS: TOC_3
 #+LANGUAGE: bt-br
 #+LATEX_HEADER: \usepackage[]{babel}
@@ -10,20 +10,294 @@
 #+OPTIONS: toc:nil
 [[./pics/ufc.png]]
 
+
 #+BEGIN_abstract
 
-Descreva aqui o resumo
+Este artigo descreve o funcionamento e as decisões tomadas para a
+construção de um Diferenciador Simbólico escrito na linguagem Racket.
+É apresentado, de maneira simplificada, referências para instalação do
+ambiente e execução da aplicação. Boa parte dessa aplicação é baseada
+na leitura do livro /Structure and Interpretation of Computer
+Programs/ (ABELSON; SUSSMAN; 1996) e nas aulas da disciplina Paradigmas
+de Linguagem de Programação ministradas pelo professor Joseph
+Alcântara, 2018.1, UFC Sobral.
 
 #+END_abstract
-#+TOC: headlines=2
-
-
-* Sumário                                                             :TOC_3:
-:PROPERTIES:
-:CUSTOM_ID: toc-org
-:END:
-- [[#introdução][Introdução]]
 
 * Introdução
 
-Cogito ergo sum.
+Este programa tem como intuito receber uma expressão algébrica com
+notação prefixa e devolver essa expressão derivada de acordo com as
+regras do cálculo. A divisão desse programa é feita em quatro partes
+principais:
+
++ Análise de Expressões
++ Construção de Expressões Simbólicas
++ Regras do Cálculo Diferencial
++ Função Principal =deriv=.
+
+Para facilitar o acompanhamento desse artigo, toma-se como base
+o código-fonte da função principal =deriv= que será dissecado:
+
+#+BEGIN_SRC scheme
+  (define (deriv exp var)
+    (cond ((constant? exp var) 0)
+          ((same-var? exp var) 1)
+          ((sum? exp) (sum-rule exp var))
+          ((binary-subtraction? exp)
+             (make-subtraction (deriv (arg1 exp) var)
+                               (deriv (arg2 exp) var)))
+          ((unary-subtraction? exp)
+             (list '- (deriv (arg1 exp) var)))
+          ((product? exp) (product-rule exp var))
+          ((division? exp) (division-rule exp var))
+          ((power? exp var) (power-rule exp var))
+          ((exponential? exp var) (exponential-rule exp var))
+          (else (error (format "Unknown rule for exp: ~a." exp)))))
+#+END_SRC
+
+Esta função recebe uma expressão algébrica =exp= e o símbolo da
+variável =var= para realizar a derivação. Sua definição é composta de
+uma análise de casos através do uso do =cond=, onde é disparado os
+valores ou regras do cálculo de acordo com uma análise de expressão
+prévia. Por exemplo, se a expressão é identificada como um produto
+através da função =product?=, será aplicada a regra =product-rule=. E,
+de forma análoga, é feito a identificação para constantes, somas,
+subtração, divisão, potência e a exponencial \(e ^ {u(x)}\), na qual
+aciona as devidas regras para essas expressões.
+
+O artigo a seguir apresentará de forma breve uma amostra dessas regras
+para cada uma das partes principais listadas.
+
+* Instalação do Ambiente
+
+Para instalação do ambiente, faça download do DrRacket 6.12 neste link
+http://racket-lang.org/download/ de acordo com sua plataforma e
+execute o instalador. Uma IDE chamada de DrRacket será instalada e
+é sugerido usá-la para testar essa aplicação. Se por acaso o ambiente
+de instalação for o sistema operacional GNU/Linux com alguma
+distribuição baseada no Debian, é possível simplificar a instalação
+com:
+
+#+BEGIN_SRC shell
+sudo apt-get install racket -y
+#+END_SRC
+
+O código fonte aqui apresentado pode ser encontrado na página:
+https://github.com/ryukinix/symbolic-deriv
+
+Deve-se abrir e carregar o arquivo =deriv.rkt=. No final deste arquivo
+é demonstrado exemplos de chamadas de função para a função deriv, que
+deve ser inserido no interpretador de comandos da IDE DrRacket.
+
+* Análise de Expressões
+
+Esta etapa de análise de expressões tem a responsabilidade de
+classificar sintaticamente expressões em relação ao seu tipo, por
+exemplo, se é uma soma, subtração, divisão, potência ou
+exponencial. A análise de expressões é realizada com os manipuladores
+de lista =car= e =cdr=, tendo como base que todas as expressões de
+entrada são prefixas.
+
+Para facilitar a construção desses procedimentos, é primeiro criado
+dois apelidos:
+
+#+BEGIN_SRC scheme
+(define arg1 cadr)
+(define arg2 caddr)
+#+END_SRC
+
+Esses são os selecionadores de argumentos para uma operação unária
+ou binária. Como sugerido =arg1= retorna o primeiro operando e =arg2= o
+segundo operando de uma operação binária. =(arg1 `(+ 1 2))= retorna =1=
+e aplicando a mesma lista para =arg2= retorna =2=.
+
+Os símbolos dos operadores são: =+= para soma, =-= subtração, =/= divisão, =*=
+multiplicação, =^= potenciação e exponenciação. Veja que o operador
+=^= é ambíguo em relação a potênciação e exponenciação, ou seja,
+precisamos de um critério extra pra distinguir se a operação é de potência
+ou exponencial.
+
+Por exemplo, é definido nesse programa as funções =same-var?= e
+=constant?=. A primeira função analisa se determinada expressão é uma
+variável igual da expressão de entrada e a outra função verifica se é
+a expressão é uma constante.
+
+O código a seguir demonstra a definição desses procedimentos:
+
+#+BEGIN_SRC scheme
+(define (constant? exp var)
+  (and (atom? exp)
+       (not (eq? exp var))))
+
+(define (same-var? exp var)
+  (and (atom? exp)
+       (eq? exp var)))
+#+END_SRC
+
+Ou seja, uma constante deve ser um átomo e não pode ser igual a uma
+variável, para verificar se é a mesma variável verifica se é um
+átomo e a expressão é igual a variável.
+
+Numa forma mais genérica, baseado em =same-var?= a função
+=contains-var?= procura numa árvore de expressão se uma variável é
+usada. Isso é importante no uso para identificação de potências e
+exponenciais, pois: potências tem variáveis na base da potência,
+exponenciais a variável está no expoente. É possível demonstrar isso a
+seguir:
+
+#+BEGIN_SRC scheme
+(define (power? exp var)
+  (and (binary-op? exp '^)
+       (contains-var? (arg1 exp) var)
+       (not (contains-var? (arg2 exp) var))))
+
+(define (exponential? exp var)
+  (and (binary-op? exp '^)
+       (eq? (arg1 exp) 'e)
+       (contains-var? (arg2 exp) var)))
+
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+> (power? '(^ e x) 'x)
+#f
+> (exponential? '(^ e x) 'x
+#t
+> (power? '(^ x 2) 'x)
+#t
+> (exponential? '(^ x 2) 'x)
+#f
+#+END_EXAMPLE
+
+* Construção de Expressões Simbólicas
+
+A construção de expressões simbólicas são necessárias para produzir os resultados
+aplicados pela regras do cálculo diferencial. Para um melhor
+resultado, na construção de expressões simbólicas já é feito algumas
+possíveis simplificações algébricas, como por exemplo se a soma é dois
+números, apenas retornar a soma numérica deles já avaliada =(make-sum
+1 2) => 3=.
+
+#+BEGIN_SRC scheme
+
+(define (make-sum a1 a2)
+  (cond ((and (number? a1)
+              (number? a2))
+         (+ a1 a2))
+        ((and (number? a1) (= a1 0))
+         a2)
+        ((and (number? a2) (= a2 0))
+         a1)
+        ((same-var? a1 a2) (list '* 2 a1))
+        (else (list '+ a1 a2))))
+
+#+END_SRC
+
+O resultado esperado é que se um dos operandos é zero, então a
+resposta é igual ao outro operando. Se ambos operandos são a mesma
+variável, portanto, \(x + x = 2x\). Dessa maneira os resultados são
+simplificados. Se não for possível simplificar, o resultado é apenas a
+construção simbólica como uma lista da operação, por exemplo:
+=(make-sum 1 'x) => '(+ 1 x))=.
+
+De forma análoga, as outras funções =make-sum=, =make-subtraction=,
+=make-product=, =make-division= e =make-power= são construídos.
+
+* Regras do Cálculo Diferencial
+
+\begin{equation}
+\frac{d}{dx}c = 0
+\end{equation}
+
+\begin{equation}
+\frac{d}{dx}x = 1
+\end{equation}
+
+\begin{equation}
+\frac{d}{dx}({f(x) + g(x)}) = f'(x) + g'(x)
+\end{equation}
+
+\begin{equation}
+\frac{d}{dx}({f(x) - g(x)}) = f'(x) - g'(x)
+\end{equation}
+
+\begin{equation}
+\frac{d}{dx}{f(x)g(x)} = f'(x)g(x) + f(x)g'(x)
+\end{equation}
+
+\begin{equation}
+\frac{d}{dx}{\frac{f(x)}{g(x)}} = \frac{f'(x)g(x) - f(x)g'(x)}{{g(x)}^2}
+\end{equation}
+
+\begin{equation}
+\frac{d}{dx}{u(x)}^n = n u'(x) (u(x))^{n - 1}
+\end{equation}
+
+\begin{equation}
+\frac{d}{dx}e^{u(x)} = {u'(x)}e^{u(x)}
+\end{equation}
+
+Todas essas regras acimas do cálculo diferencial estão implementadas
+nessa aplicação. As regras escritas em Racket assumem uma expressão
+bem formada, que é assegurada pela parte de análise de expressões. Se
+uma expressão algébrica necessitar de uma regra além dessas, a
+aplicação gerará um erro afirmando que não é conhecido uma regra pra
+derivar tal expressão (e.g.: =(^ x x)=)
+
+Como amostra, podemos observar a regra do produto como:
+
+#+BEGIN_SRC scheme
+(define (product-rule exp var)
+  (make-sum (make-product (arg1 exp)
+                          (deriv (arg2 exp) var))
+            (make-product (arg2 exp)
+                          (deriv (arg1 exp) var))))
+#+END_SRC
+
+Ao utilizar as construções de expressões simbólicas =make-sum= e
+=make-product=, essa regra é uma tradução literal das regras do
+cálculo para este aplicação em Racket.
+
+
+
+* Função principal =deriv=
+
+Como já apresentada na introdução, a função principal =deriv= é um
+tipo de função multi-recursiva em relação as regras de cálculo. Isto
+quer dizer que além de usar essas funções, as funções de regra de
+cálculo também chamam a função =deriv=. Esse comportamento é
+necessário de acordo com a regra da cadeia do Cálculo, onde funções
+compostas precisam ser derivadas em camadas.
+
+* Resultados
+
+Ao carregar o arquivo =deriv.rkt= no DrRacket, é possível avaliar as
+seguintes expressões em busca da sua derivada:
+
+#+BEGIN_EXAMPLE
+> (deriv 'c 'x)
+0
+> (deriv 'x 'x)
+1
+> (deriv '(+ x x) 'x)
+2
+> (deriv '(* x x) 'x)
+'(* 2 x)
+> (deriv '(/ 1 x) 'x)
+'(/ -1 (^ x 2))
+> (deriv '(^ x 2) 'x)
+'(* 2 x)
+> (deriv '(^ e x) 'x)
+'(^ e x)
+> (deriv '(^ e (* 2 x)) 'x)
+'(* 2 (^ e (* 2 x)))
+
+#+END_EXAMPLE
+
+Na qual confirma-se, matematicamente, que as derivadas dessas
+expressões são as mesmas providas pelas regras do cálculo diferencial.
+
+* Referências
+
++ Harold Abelson and Gerald J. Sussman. 1996. Structure and Interpretation of Computer Programs (2nd ed.). MIT Press, Cambridge, MA, USA.

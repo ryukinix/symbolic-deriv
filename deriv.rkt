@@ -46,13 +46,8 @@ Implemented rules:
 
 ;; Check if the EXP tree has at least one VAR symbol.
 (define (contains-var? exp var)
-  (cond ((null? exp) #f)
-        ((number? exp) #f)
-        ((same-var? exp var) #t)
+  (cond ((same-var? exp var) #t)
         ((atom? exp) #f)
-        ((same-var? (arg1 exp) var) #t)
-        ((< (length exp) 3) #f)
-        ((same-var? (arg2 exp) var) #t)
         ((or (contains-var? (arg1 exp) var)
              (contains-var? (arg2 exp) var)) #t)
         (else #f)))

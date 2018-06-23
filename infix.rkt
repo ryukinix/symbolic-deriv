@@ -2,6 +2,8 @@
 
 (require "deriv.rkt")
 
+(provide deriv->infix)
+
 (define operators-precedence '(^ * / + -))
 
 ;; Translate prefix notation to infix notation: (* 2 3) => (2 * 3).

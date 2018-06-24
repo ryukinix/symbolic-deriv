@@ -101,6 +101,11 @@ Implemented rules:
        (eq? (arg1 exp) 'e)
        (contains-var? (arg2 exp) var)))
 
+;; It's a power, but doesn't depends of VAR.
+(define (power-constant? exp var)
+  (and (binary-op? exp '^)
+       (not (contains-var? (arg1 exp) var))
+       (not (contains-var? (arg2 exp) var))))
 #|
 
 == SYMBOLIC EXPRESSIONS CONSTRUCTIONS ==
@@ -208,6 +213,7 @@ Implemented rules:
 ;; Main function with calculus rules for derivation.
 (define (deriv exp var)
   (cond ((constant? exp var) 0)
+        ((power-constant? exp var) 0)
         ((same-var? exp var) 1)
         ((sum? exp) (sum-rule exp var))
         ((binary-subtraction? exp) (make-subtraction (deriv (arg1 exp) var)

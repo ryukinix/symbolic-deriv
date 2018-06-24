@@ -114,7 +114,7 @@ e aplicando a mesma lista para =arg2= retorna =2=.
 
 Os símbolos dos operadores são: =+= para soma, =-= subtração, =/= divisão, =*=
 multiplicação, =^= potenciação e exponenciação. Veja que o operador
-=^= é ambíguo em relação a potênciação e exponenciação, ou seja,
+=^= é ambíguo em relação a potenciação e exponenciação, ou seja,
 precisamos de um critério extra pra distinguir se a operação é de potência
 ou exponencial.
 

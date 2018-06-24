@@ -48,8 +48,10 @@ Implemented rules:
 (define (contains-var? exp var)
   (cond ((same-var? exp var) #t)
         ((atom? exp) #f)
-        ((or (contains-var? (arg1 exp) var)
-             (contains-var? (arg2 exp) var)) #t)
+        ((or (and (>= (length exp) 2)
+                  (contains-var? (arg1 exp) var))
+             (and (>= (length exp) 3)
+                  (contains-var? (arg2 exp) var))) #t)
         (else #f)))
 
 ;; Check if a given EXP is a operation of symbol OP.

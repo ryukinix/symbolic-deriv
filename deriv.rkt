@@ -157,6 +157,7 @@ Implemented rules:
 ;; Make a product expression simplified of BASE and POW.
 (define (make-power base pow)
   (cond ((and (number? pow) (= pow 1)) base)
+        ((and (number? pow) (= pow 0)) 1)
         ((and (number? base) (= base 1)) 1)
         (else (list '^ base pow))))
 

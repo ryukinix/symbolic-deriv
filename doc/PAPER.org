@@ -200,7 +200,7 @@ resposta é igual ao outro operando. Se ambos operandos são a mesma
 variável, portanto, \(x + x = 2x\). Dessa maneira os resultados são
 simplificados. Se não for possível simplificar, o resultado é apenas a
 construção simbólica como uma lista da operação, por exemplo:
-=(make-sum 1 'x) => '(+ 1 x))=.
+=(make-sum 1 'x) => '(+ 1 x)=.
 
 De forma análoga, as outras funções =make-sum=, =make-subtraction=,
 =make-product=, =make-division= e =make-power= são construídos.
@@ -279,8 +279,9 @@ prefixadas nessa função podem ser conferidos na próxima seção.
 
 * Resultados
 
-Ao carregar o arquivo =deriv.rkt= no /DrRacket/, é possível avaliar as
-seguintes expressões em busca da sua derivada:
+Ao carregar o arquivo =deriv.rkt= no /DrRacket/ e pressionar o botão
+**RUN**, é possível avaliar as seguintes expressões em busca da sua
+derivada:
 
 #+BEGIN_EXAMPLE
 > (deriv 'c 'x)

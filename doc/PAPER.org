@@ -72,9 +72,9 @@ para cada uma das partes principais listadas.
 
 * Instalação do Ambiente
 
-Para instalação do ambiente, faça download do DrRacket 6.12 neste link
+Para instalação do ambiente, faça download do /DrRacket/ 6.12 neste link
 http://racket-lang.org/download/ de acordo com sua plataforma e
-execute o instalador. Uma IDE chamada de DrRacket será instalada e
+execute o instalador. Uma IDE chamada de /DrRacket/ será instalada e
 é sugerido usá-la para testar essa aplicação. Se por acaso o ambiente
 de instalação for o sistema operacional GNU/Linux com alguma
 distribuição baseada no Debian, é possível simplificar a instalação
@@ -89,7 +89,7 @@ https://github.com/ryukinix/symbolic-deriv
 
 Deve-se abrir e carregar o arquivo =deriv.rkt=. No final deste arquivo
 é demonstrado exemplos de chamadas de função para a função deriv, que
-deve ser inserido no interpretador de comandos da IDE DrRacket.
+deve ser inserido no interpretador de comandos da IDE /DrRacket/.
 
 * Análise de Expressões
 
@@ -250,10 +250,10 @@ Como amostra, podemos observar a regra do produto como:
 
 #+BEGIN_SRC scheme
 (define (product-rule exp var)
-  (make-sum (make-product (arg1 exp)
-                          (deriv (arg2 exp) var))
-            (make-product (arg2 exp)
-                          (deriv (arg1 exp) var))))
+  (make-sum (make-product (deriv (arg1 exp) var)
+                          (arg2 exp))
+            (make-product (arg1 exp)
+                          (deriv (arg2 exp) var))))
 #+END_SRC
 
 Ao utilizar as construções de expressões simbólicas =make-sum= e
@@ -265,15 +265,21 @@ cálculo para este aplicação em Racket.
 * Função principal =deriv=
 
 Como já apresentada na introdução, a função principal =deriv= é um
-tipo de função multi-recursiva em relação as regras de cálculo. Isto
-quer dizer que além de usar essas funções, as funções de regra de
-cálculo também chamam a função =deriv=. Esse comportamento é
+tipo de função multi-recursiva em relação funções para as regras de
+cálculo. Isto quer dizer que além de usar essas funções, as funções de
+regra de cálculo também chamam a função =deriv=. Esse comportamento é
 necessário de acordo com a regra da cadeia do Cálculo, onde funções
-compostas precisam ser derivadas em camadas.
+compostas precisam ser derivadas recursivamente em relação a cada
+composição de função.
+
+Sua definição depende de todas as funções anteriormente definidas:
+análise de expressões, construção de expressões simbólicas e as regras
+para derivadas. Os resultados ao aplicar expressões algébricas
+prefixadas nessa função podem ser conferidos na próxima seção.
 
 * Resultados
 
-Ao carregar o arquivo =deriv.rkt= no DrRacket, é possível avaliar as
+Ao carregar o arquivo =deriv.rkt= no /DrRacket/, é possível avaliar as
 seguintes expressões em busca da sua derivada:
 
 #+BEGIN_EXAMPLE

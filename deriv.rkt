@@ -164,6 +164,9 @@ Implemented rules:
   (cond ((and (number? pow) (= pow 1)) base)
         ((and (number? pow) (= pow 0)) 1)
         ((and (number? base) (= base 1)) 1)
+        ((and (number? base)
+              (number? pow))
+         (^ base pow))
         (else (list '^ base pow))))
 
 #|

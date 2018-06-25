@@ -42,6 +42,7 @@ o código-fonte da função principal =deriv= que será dissecado:
 #+BEGIN_SRC scheme
   (define (deriv exp var)
     (cond ((constant? exp var) 0)
+          ((power-constant? exp var) 0)
           ((same-var? exp var) 1)
           ((sum? exp) (sum-rule exp var))
           ((binary-subtraction? exp)

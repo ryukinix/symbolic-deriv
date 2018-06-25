@@ -189,10 +189,10 @@ Implemented rules:
 
 ;; Definition of the product rule: f(x)g(x) => f'(x)g(x) + f(x)g'(x)
 (define (product-rule exp var)
-  (make-sum (make-product (arg1 exp)
-                          (deriv (arg2 exp) var))
-            (make-product (arg2 exp)
-                          (deriv (arg1 exp) var))))
+  (make-sum (make-product (deriv (arg1 exp) var)
+                          (arg2 exp))
+            (make-product (arg1 exp)
+                          (deriv (arg2 exp) var))))
 
 ;; Definition of the division rule: f(x)/g(x) => (f'(x)g(x)-f(x)g'(x))/(g(x))²
 (define (division-rule exp var)
